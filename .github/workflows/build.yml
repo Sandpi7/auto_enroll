@@ -10,14 +10,17 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    
+    permissions:
+      contents: read
+      
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
+        cache: 'pip'
         
     - name: Install dependencies
       run: |
@@ -29,44 +32,70 @@ jobs:
       run: |
         pyinstaller --name=Enrollment_Updater --onefile --windowed --clean --noupx --uac-admin --version-file=file_version_info.txt enrollment_updater.py
         
-    - name: Sign the executable
-      shell: pwsh
+    - name: Setup Windows signing certificate
+      id: write_certificate
+      env:
+        CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE_PFX }}
       run: |
-        $certPath = "$env:RUNNER_TEMP\code_signing_cert.pfx"
-        [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String("${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}"))
-        & "C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe" sign `
-          /f $certPath `
-          The Windows certificate password is used to secure your code signing certificate. You'll need to:
-
-          1. Obtain a code signing certificate from a Certificate Authority (CA) or create a self-signed certificate
-          2. When you have the certificate, you'll set a password during creation/export
-          3. Store that password as a GitHub secret:
-            - Go to your GitHub repository
-            - Navigate to Settings → Secrets and variables → Actions
-            - Click "New repository secret"
-            - Name it "WINDOWS_CERTIFICATE_PASSWORD"
-            - Enter the certificate password as the value
-            - Click "Add secret"
-
-          For testing, you can create a self-signed certificate. For production, purchase one from a trusted CA.
-          /fd SHA256 `
-          /tr http://timestamp.digicert.com `
-          /td SHA256 `
-          "dist\Enrollment_Updater.exe"
-        Remove-Item $certPath
+        echo "$env:CERTIFICATE" > certificate.b64
+        certutil -decode certificate.b64 certificate.pfx
+        
+    - name: Sign Windows executable
+      run: |
+        & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\signtool.exe' sign /f certificate.pfx /p ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }} /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist/Enrollment_Updater.exe
+        Remove-Item -Path certificate.pfx
+        Remove-Item -Path certificate.b64
+    
+    - name: Create documentation files
+      run: |
+        @"
+        # Antivirus Information
+        
+        The Enrollment Updater executable is signed with a trusted certificate to ensure its authenticity.
+        The digital signature can be verified through Windows File Properties.
+        
+        This is a legitimate application for updating enrollment data in Excel files.
+        "@ | Out-File -FilePath dist/ANTIVIRUS_INFO.md -Encoding UTF8
+        
+        @"
+        # Installation Instructions
+        
+        1. Extract the Enrollment_Updater_Package.zip to your desired location
+        2. Run Enrollment_Updater.exe
+        3. Follow the in-app instructions to update enrollment data
+        
+        Note: The application requires Windows and Microsoft Excel to be installed.
+        "@ | Out-File -FilePath dist/INSTALL.md -Encoding UTF8
     
     - name: Create distribution package
+      shell: pwsh
       run: |
-        mkdir dist/Enrollment_Updater_Package
-        copy dist/Enrollment_Updater.exe dist/Enrollment_Updater_Package/
-        copy README.md dist/Enrollment_Updater_Package/
-        copy LICENSE dist/Enrollment_Updater_Package/
-        copy dist/ANTIVIRUS_INFO.md dist/Enrollment_Updater_Package/
-        copy dist/INSTALL.md dist/Enrollment_Updater_Package/
-        Compress-Archive -Path dist/Enrollment_Updater_Package/* -DestinationPath dist/Enrollment_Updater_Package.zip -Force
+        $packageDir = "dist/Enrollment_Updater_Package"
+        New-Item -ItemType Directory -Path $packageDir -Force
+        
+        # Define required files and their source locations
+        $files = @{
+          "dist/Enrollment_Updater.exe" = "$packageDir/Enrollment_Updater.exe"
+          "README.md" = "$packageDir/README.md"
+          "LICENSE" = "$packageDir/LICENSE"
+          "dist/ANTIVIRUS_INFO.md" = "$packageDir/ANTIVIRUS_INFO.md"
+          "dist/INSTALL.md" = "$packageDir/INSTALL.md"
+        }
+        
+        # Copy each file, checking existence
+        foreach ($source in $files.Keys) {
+          if (Test-Path $source) {
+            Copy-Item -Path $source -Destination $files[$source] -Force
+          } else {
+            Write-Warning "File not found: $source"
+          }
+        }
+        
+        Compress-Archive -Path "$packageDir/*" -DestinationPath dist/Enrollment_Updater_Package.zip -Force
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Enrollment-Updater
         path: dist/Enrollment_Updater_Package.zip
+        compression-level: 9
