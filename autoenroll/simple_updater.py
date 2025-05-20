@@ -470,15 +470,19 @@ class ExcelDataReplacer:
                 print(f"Source dataframe shape: {source_df.shape}")
                 print(f"Source columns: {list(source_df.columns)}")
             
-            # Determine source columns
-            crn_col = "'CRN'"  # Source CRN column - with quotes as in your data
-            actual_col = "'Actual'"  # Source Actual column - with quotes as in your data
+            # Determine source columns - try both quoted and unquoted versions
+            crn_options = ["'CRN'", "CRN"]  # Try both quoted and unquoted
+            actual_options = ["'Actual'", "Actual"]  # Try both quoted and unquoted
+            
+            # Find the correct column names
+            crn_col = next((col for col in crn_options if col in source_df.columns), None)
+            actual_col = next((col for col in actual_options if col in source_df.columns), None)
             
             # Check if columns exist
-            if crn_col not in source_df.columns:
-                raise ValueError(f"Column '{crn_col}' not found in source file")
-            if actual_col not in source_df.columns:
-                raise ValueError(f"Column '{actual_col}' not found in source file")
+            if crn_col is None:
+                raise ValueError(f"CRN column not found in source file. Available columns: {list(source_df.columns)}")
+            if actual_col is None:
+                raise ValueError(f"Actual column not found in source file. Available columns: {list(source_df.columns)}")
             
             # Load target file
             target_wb = load_workbook(target_file)
