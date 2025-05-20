@@ -7,11 +7,12 @@ on:
     branches: [ main ]
   workflow_dispatch:  # Allows manual triggering
 
+permissions:
+  contents: write  # Needed for creating releases
+
 jobs:
   build:
     runs-on: windows-latest
-    permissions:
-      contents: read
       
     steps:
     - uses: actions/checkout@v4
@@ -92,6 +93,19 @@ jobs:
         }
         
         Compress-Archive -Path "$packageDir/*" -DestinationPath dist/Enrollment_Updater_Package.zip -Force
+
+    - name: Create Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/Enrollment_Updater_Package.zip
+        name: Enrollment Updater v1.0.0
+        tag_name: v1.0.0
+        body_path: RELEASE_NOTES.md
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
