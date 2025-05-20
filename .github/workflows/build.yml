@@ -1,0 +1,55 @@
+name: Build and Sign Executable
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install -r requirements.txt
+        
+    - name: Build executable with PyInstaller
+      run: |
+        pyinstaller --name=Enrollment_Updater --onefile --windowed --clean --noupx --uac-admin --version-file=file_version_info.txt enrollment_updater.py
+        
+    - name: Sign the executable
+      uses: pmborg/Sign-Windows-Executable-Action@v2
+      with:
+        certificate: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+        cert-password: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        cert-sha1: ${{ secrets.WINDOWS_CERTIFICATE_SHA1 }}
+        folder: "dist"
+        file: "Enrollment_Updater.exe"
+    
+    - name: Create distribution package
+      run: |
+        mkdir dist/Enrollment_Updater_Package
+        copy dist/Enrollment_Updater.exe dist/Enrollment_Updater_Package/
+        copy README.md dist/Enrollment_Updater_Package/
+        copy LICENSE dist/Enrollment_Updater_Package/
+        copy dist/ANTIVIRUS_INFO.md dist/Enrollment_Updater_Package/
+        copy dist/INSTALL.md dist/Enrollment_Updater_Package/
+        Compress-Archive -Path dist/Enrollment_Updater_Package/* -DestinationPath dist/Enrollment_Updater_Package.zip -Force
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: Enrollment-Updater
+        path: dist/Enrollment_Updater_Package.zip
