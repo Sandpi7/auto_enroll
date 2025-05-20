@@ -10,9 +10,15 @@ A simple tool to update enrollment data between Excel files, specifically design
 - View detailed reports of all updates made
 - Save update reports to text files
 - Simple, clean interface
+- Digitally signed executable for enhanced security
 
 ## Requirements
 
+### Using the Pre-built Executable (Recommended)
+- Windows operating system
+- Microsoft Excel
+
+### Building from Source
 - Python 3.6+
 - Required packages:
   - pandas
@@ -21,9 +27,16 @@ A simple tool to update enrollment data between Excel files, specifically design
 
 ## Installation
 
+### Option 1: Download the Signed Executable (Recommended)
+1. Go to the [Releases](../../releases) page
+2. Download the latest `Enrollment_Updater_Package.zip`
+3. Extract the zip file
+4. Run `Enrollment_Updater.exe`
+
+### Option 2: Build from Source
 1. Clone this repository:
    ```
-   git clone https://github.com/Sandpi7/enrollment-updater
+   git clone https://github.com/Sandpi7/auto_enroll.git
    ```
 
 2. Install required packages:

@@ -7,13 +7,12 @@ setup(
     install_requires=[
         "pandas>=2.0.0",
         "openpyxl>=3.1.0",
-    ],
-    author="",
+    ],    author="Arkansas State University",
     author_email="",
     description="Tool to update enrollment data between Excel files",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/enrollment-updater",
+    url="https://github.com/Sandpi7/auto_enroll",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
