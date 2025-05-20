@@ -23,7 +23,7 @@ A simple tool to update enrollment data between Excel files, specifically design
 
 1. Clone this repository:
    ```
-   git clone https://github.com/Sandpi7/enrollment-updater.git
+   git clone https://github.com/Sandpi7/enrollment-updater
    ```
 
 2. Install required packages:
