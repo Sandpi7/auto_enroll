@@ -30,13 +30,30 @@ jobs:
         pyinstaller --name=Enrollment_Updater --onefile --windowed --clean --noupx --uac-admin --version-file=file_version_info.txt enrollment_updater.py
         
     - name: Sign the executable
-      uses: pmborg/Sign-Windows-Executable-Action@v2
-      with:
-        certificate: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
-        cert-password: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-        cert-sha1: ${{ secrets.WINDOWS_CERTIFICATE_SHA1 }}
-        folder: "dist"
-        file: "Enrollment_Updater.exe"
+      shell: pwsh
+      run: |
+        $certPath = "$env:RUNNER_TEMP\code_signing_cert.pfx"
+        [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String("${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}"))
+        & "C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe" sign `
+          /f $certPath `
+          The Windows certificate password is used to secure your code signing certificate. You'll need to:
+
+          1. Obtain a code signing certificate from a Certificate Authority (CA) or create a self-signed certificate
+          2. When you have the certificate, you'll set a password during creation/export
+          3. Store that password as a GitHub secret:
+            - Go to your GitHub repository
+            - Navigate to Settings → Secrets and variables → Actions
+            - Click "New repository secret"
+            - Name it "WINDOWS_CERTIFICATE_PASSWORD"
+            - Enter the certificate password as the value
+            - Click "Add secret"
+
+          For testing, you can create a self-signed certificate. For production, purchase one from a trusted CA.
+          /fd SHA256 `
+          /tr http://timestamp.digicert.com `
+          /td SHA256 `
+          "dist\Enrollment_Updater.exe"
+        Remove-Item $certPath
     
     - name: Create distribution package
       run: |
