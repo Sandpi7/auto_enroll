@@ -16,7 +16,8 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
-exe = EXE(    pyz,
+exe = EXE(
+    pyz,
     a.scripts,
     a.binaries,
     a.datas,
@@ -25,14 +26,14 @@ exe = EXE(    pyz,
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=False,  # Disable UPX compression to reduce false positives
+    upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
     disable_windowed_traceback=False,
-    argv_emulation=False,    target_arch=None,
+    argv_emulation=False,
+    target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    uac_admin=True,  # Request admin privileges which can reduce AV flags
-    version='file_version_info.txt',  # Add version info to the executable
+    uac_admin=True,
 )
