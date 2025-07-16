@@ -62,11 +62,13 @@ python enrollment_updater.py
 ### Batch Mode
 
 1. Select "Process Folder" mode
-2. Choose your source folder containing Excel files
-3. Choose your target folder where updated files will be saved
-4. Specify a file pattern (default: *.xlsx)
+2. Choose your source folder containing the enrollment data Excel file
+3. Choose your target folder containing the files to be updated
+4. Specify a file pattern for target files (default: *.xlsx)
 5. Click "Update Enrollment"
 6. View the update results using the "View Last Updates" button
+
+**Note**: In batch mode, one source file with enrollment data is used to update multiple target files matching the pattern.
 
 ## File Format Requirements
 

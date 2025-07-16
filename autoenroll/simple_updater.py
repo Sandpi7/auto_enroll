@@ -117,8 +117,8 @@ class ExcelDataReplacer:
             self.source_entry.delete(0, tk.END)
             self.target_entry.delete(0, tk.END)
         else:
-            self.source_label.config(text="Source Dir:")
-            self.target_label.config(text="Target Dir:")
+            self.source_label.config(text="Source Folder:")
+            self.target_label.config(text="Target Folder:")
             self.pattern_frame.pack(pady=5, fill=tk.X, padx=20, after=self.target_frame)
             self.source_entry.delete(0, tk.END)
             self.target_entry.delete(0, tk.END)
@@ -189,7 +189,7 @@ class ExcelDataReplacer:
             self.update_status("Error occurred")
 
     def replace_data_batch(self):
-        """Process all files in source folder matching pattern"""
+        """Process all files in target folder matching pattern with source data"""
         source_folder = self.source_entry.get()
         target_folder = self.target_entry.get()
         pattern = self.pattern_entry.get()
@@ -199,25 +199,33 @@ class ExcelDataReplacer:
             return
 
         try:
-            file_pattern = os.path.join(source_folder, pattern)
-            source_files = glob.glob(file_pattern)
+            # Find source files (enrollment data)
+            source_file_pattern = os.path.join(source_folder, "*.xlsx")
+            source_files = glob.glob(source_file_pattern)
             
             if not source_files:
-                messagebox.showinfo("Info", f"No files matching '{pattern}' found in the source folder.")
+                messagebox.showerror("Error", f"No Excel files found in the source folder: {source_folder}")
+                return
+            
+            # Use the first source file (or let user choose later)
+            source_file = source_files[0]
+            if len(source_files) > 1:
+                self.update_status(f"Using first source file: {os.path.basename(source_file)}")
+            
+            # Find target files matching pattern
+            target_file_pattern = os.path.join(target_folder, pattern)
+            target_files = glob.glob(target_file_pattern)
+            
+            if not target_files:
+                messagebox.showinfo("Info", f"No files matching '{pattern}' found in the target folder.")
                 return
                 
             total_updated = 0
             files_processed = 0
             self.all_update_details = []  # Reset for batch processing
             
-            for source_file in source_files:
-                file_name = os.path.basename(source_file)
-                target_file = os.path.join(target_folder, file_name)
-                
-                # Skip if target file doesn't exist
-                if not os.path.exists(target_file):
-                    self.update_status(f"Skipping {file_name}: Target file doesn't exist")
-                    continue
+            for target_file in target_files:
+                file_name = os.path.basename(target_file)
                     
                 self.update_status(f"Processing: {file_name}")
                 try:
@@ -235,18 +243,22 @@ class ExcelDataReplacer:
                     self.update_status(f"Updated {rows_updated} rows in {file_name}")
                 except Exception as e:
                     self.update_status(f"Error processing {file_name}: {str(e)}")
+                    if self.debug_var.get():
+                        print(f"Detailed error for {file_name}: {str(e)}")
             
             if total_updated > 0:
                 messagebox.showinfo("Batch Complete", 
                                   f"Batch processing successful!\n\n"
-                                  f"• Processed {files_processed} files\n"
+                                  f"• Source file: {os.path.basename(source_file)}\n"
+                                  f"• Processed {files_processed} target files\n"
                                   f"• Total of {total_updated} rows updated\n"
                                   f"• Click 'View Last Updates' to see details")
                 self.btn_view_updates.config(state=tk.NORMAL)
             else:
                 messagebox.showinfo("Batch Complete", 
                                   f"Batch processing complete\n\n"
-                                  f"• Processed {files_processed} files\n"
+                                  f"• Source file: {os.path.basename(source_file)}\n"
+                                  f"• Processed {files_processed} target files\n"
                                   f"• No matching rows found for update")
                 
             self.update_status(f"Batch processing complete. {files_processed} files processed.")
