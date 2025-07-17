@@ -7,8 +7,8 @@ setup(
     install_requires=[
         "pandas>=2.0.0",
         "openpyxl>=3.1.0",
-    ],    author="Arkansas State University",
-    author_email="",
+    ],    author="Christopher Pitts",
+    author_email="cpitts@astate.edu",
     description="Tool to update enrollment data between Excel files",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
